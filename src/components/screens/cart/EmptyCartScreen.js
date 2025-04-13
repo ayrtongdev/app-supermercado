@@ -1,13 +1,31 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import useThemeStore from '../../../zustand/themeStore';
 
 const EmptyCartScreen = ({ navigation }) => {
+    const { darkMode } = useThemeStore();
+
+   const dynamicStyles = {
+      container: {
+          ...styles.container,
+          backgroundColor: darkMode ? '#212121' : '#F2F2F2',
+      },
+      button: {
+          ...styles.button,
+          backgroundColor: darkMode ? '#0288D1' : '#0BB3D9'
+     },
+     text:{
+      ...styles.text,
+      color: darkMode ? '#717171' : '#252525'
+     },
+  };
+
  return (
-    <View style={styles.container}>
+    <View style={dynamicStyles.container}>
       <Image source={require('../../../../assets/emptycart.png')} style={styles.image} />
-      <Text style={styles.text}>Seu carrinho está vazio</Text>
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
-        <Text style={styles.buttonText}>Comece aqui</Text>
+      <Text style={dynamicStyles.text}>Seu carrinho está vazio</Text>
+      <TouchableOpacity style={dynamicStyles.button} onPress={() => navigation.navigate('Home')}>
+        <Text style={styles.buttonText}>Voltar para o início</Text>
       </TouchableOpacity>
     </View>
  );
@@ -37,7 +55,7 @@ const styles = StyleSheet.create({
     marginTop: 30,
  },
  buttonText: {
-    color: 'white',
+    color: '#F5F5F5',
     fontSize: 16,
  },
 });

@@ -24,7 +24,7 @@ const SignupScreen = ({ navigation }) => {
   const [resendCodeTimer, setResendCodeTimer] = useState(60);
   const [timerColor, setTimerColor] = useState('#000000');
 
-  
+
 
   const codeInput1 = useRef(null);
   const codeInput2 = useRef(null);
@@ -161,13 +161,13 @@ const SignupScreen = ({ navigation }) => {
               <View style={styles.separatorLine} />
             </View>
 
-                 
+
 
             <GoogleSign
-            onLoginSuccess={(userInfo) => console.log('Login bem-sucedido', userInfo)}
-            onLoginError={(errorMessage) => console.log('Erro no login', errorMessage)}
-            navigation={navigation}
-          />     
+              onLoginSuccess={(userInfo) => console.log('Login bem-sucedido', userInfo)}
+              onLoginError={(errorMessage) => console.log('Erro no login', errorMessage)}
+              navigation={navigation}
+            />
 
 
 

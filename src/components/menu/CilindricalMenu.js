@@ -2,16 +2,44 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import useThemeStore from '../../zustand/themeStore';
 
 const CilindricalMenu = () => {
   const navigation = useNavigation();
   const currentRoute = useNavigationState((state) => state.routes[state.index].name);
+  const { darkMode } = useThemeStore();
 
+  // Função para determinar o ícone correto
+  const getIcon = (routeName, isActive) => {
+    const darkIcons = {
+      Home: isActive ? require('../../../assets/home-dm.png') : require('../../../assets/house1.png'),
+      Favorite: isActive ? require('../../../assets/love-dm-menu.png') : require('../../../assets/love-dmi.png'),
+      Store: isActive ? require('../../../assets/store-dm.png') : require('../../../assets/voucher1.png'),
+      Profile: isActive ? require('../../../assets/user-dm.png') : require('../../../assets/user1.png'),
+    };
+
+    const lightIcons = {
+      Home: isActive ? require('../../../assets/house.png') : require('../../../assets/house1.png'),
+      Favorite: isActive ? require('../../../assets/love2.png') : require('../../../assets/love3.png'),
+      Store: isActive ? require('../../../assets/voucher.png') : require('../../../assets/voucher1.png'),
+      Profile: isActive ? require('../../../assets/user2.png') : require('../../../assets/user1.png'),
+    };
+
+    return darkMode ? darkIcons[routeName] : lightIcons[routeName];
+  };
+
+  // Função para criar estilos animados
   const createAnimatedStyle = (routeName) => {
     const isActive = currentRoute === routeName;
     const scale = isActive ? 1 : 0.7;
     const borderWidth = isActive ? 2 : 0;
-    const backgroundColor = isActive ? '#EEEEEE' : '#0BB3D9';
+    const backgroundColor = isActive
+      ? darkMode
+        ? '#E0E0E0'
+        : '#EEEEEE'
+      : darkMode
+      ? '#0288D1'
+      : '#0BB3D9';
 
     return useAnimatedStyle(() => ({
       transform: [{ scale: withTiming(scale, { duration: 200 }) }],
@@ -20,43 +48,33 @@ const CilindricalMenu = () => {
     }));
   };
 
+  // Estilos dinâmicos com base no tema
+  const dynamicStyles = {
+    menuContainer: {
+      ...styles.menuContainer,
+      backgroundColor: darkMode ? '#0288D1' : '#0BB3D9',
+    },
+    iconCircle: {
+      ...styles.iconCircle,
+      borderColor: darkMode ? '#E0E0E0' : '#F2F2F2',
+    },
+  };
+
+  // Renderização
   return (
-    <View style={styles.menuContainer}>
-      <TouchableOpacity onPress={() => navigation.navigate('Home')}>
-        <Animated.View style={[styles.iconCircle, createAnimatedStyle('Home'), styles.glassEffect]}>
-          <Image
-            source={currentRoute === 'Home' ? require('../../../assets/house.png') : require('../../../assets/house1.png')}
-            style={{ width: 30, height: 30 }}
-          />
-        </Animated.View>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate('Favorite')}>
-        <Animated.View style={[styles.iconCircle, createAnimatedStyle('Favorite'), styles.glassEffect]}>
-          <Image
-            source={currentRoute === 'Favorite' ? require('../../../assets/love2.png') : require('../../../assets/love3.png')}
-            style={{ width: 30, height: 30 }}
-          />
-        </Animated.View>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate('Store')}>
-        <Animated.View style={[styles.iconCircle, createAnimatedStyle('Store'), styles.glassEffect]}>
-          <Image
-            source={currentRoute === 'Store' ? require('../../../assets/voucher.png') : require('../../../assets/voucher1.png')}
-            style={{ width: 30, height: 30 }}
-          />
-        </Animated.View>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-        <Animated.View style={[styles.iconCircle, createAnimatedStyle('Profile'), styles.glassEffect]}>
-          <Image
-            source={currentRoute === 'Profile' ? require('../../../assets/user2.png') : require('../../../assets/user1.png')}
-            style={{ width: 30, height: 30 }}
-          />
-        </Animated.View>
-      </TouchableOpacity>
+    <View style={dynamicStyles.menuContainer}>
+      {['Home', 'Favorite', 'Store', 'Profile'].map((routeName) => (
+        <TouchableOpacity key={routeName} onPress={() => navigation.navigate(routeName)}>
+          <Animated.View
+            style={[dynamicStyles.iconCircle, createAnimatedStyle(routeName), styles.glassEffect]}
+          >
+            <Image
+              source={getIcon(routeName, currentRoute === routeName)}
+              style={{ width: 30, height: 30 }}
+            />
+          </Animated.View>
+        </TouchableOpacity>
+      ))}
     </View>
   );
 };
@@ -71,12 +89,11 @@ const styles = StyleSheet.create({
   iconCircle: {
     borderRadius: 50,
     padding: 10,
-    backgroundColor: '#F2F3F3',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
-    elevation: 15,
+    elevation: 3,
     borderColor: '#F2F2F2',
   },
   menuContainer: {
@@ -94,7 +111,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.7,
     shadowRadius: 5,
-    elevation: 5,
+    elevation: 3,
     overflow: 'hidden',
   },
 });

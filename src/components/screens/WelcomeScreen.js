@@ -1,8 +1,20 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, BackHandler } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-
+import { useFocusEffect } from '@react-navigation/native';
 const WelcomeScreen = ({ navigation }) => {
+  
+    useFocusEffect(
+          React.useCallback(() => {
+              const onBackPress = () => {
+                  BackHandler.exitApp();
+                  return true;
+              };
+  
+              BackHandler.addEventListener('hardwareBackPress', onBackPress);
+              return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+          }, [])
+      );
   return (
     <View style={styles.container}>
       

@@ -2,12 +2,50 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import RootToast from 'react-native-root-toast';
+import Toggle from './ThemeToggle'
+import useThemeStore from '../../../zustand/themeStore';
 
 const DataCard = ({ user, onSave }) => {
+    const { darkMode } = useThemeStore();
     const [expandedSection, setExpandedSection] = useState(null);
     const [editableValues, setEditableValues] = useState({});
     const [editingField, setEditingField] = useState(null);
     const inputRefs = useRef({});
+
+    const dynamicStyles = {
+        card: {
+            ...styles.card,
+            backgroundColor: darkMode ? '#2A2A2A' : '#FFFFFF',
+        },
+        label: {
+            ...styles.label,
+            color: darkMode ? '#E0E0E0' : '#000000',
+        },
+        value: {
+            ...styles.value,
+            color: darkMode ? '#E0E0E0' : '#000000',
+        },
+        title: {
+            ...styles.title,
+            color: darkMode ? '#FFFFFF' : '#000000',
+        },
+        expandedContent: {
+            ...styles.expandedContent,
+            backgroundColor: darkMode ? '#212121' : '#F2F2F2',
+        },
+        container: {
+            ...styles.container,
+            backgroundColor: darkMode ? '#212121' : '#F2F2F2',
+        },
+        editButtonText: {
+            ...styles.editButtonText,
+            color: darkMode ? '#0288D1' : '#0BB3D9',
+        },
+        input: {
+            ...styles.input,
+            color: darkMode ? '#E0E0E0' : '#000000',
+        },
+    };
 
 
     useEffect(() => {
@@ -31,10 +69,10 @@ const DataCard = ({ user, onSave }) => {
     }, [user]);
 
     const formatCpf = (cpf) => {
-        // Remove tudo que não é número
+
         cpf = cpf.replace(/\D/g, '');
 
-        // Adiciona a formatação: XXX.XXX.XXX-XX
+
         if (cpf.length <= 11) {
             cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2');
             cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2');
@@ -44,13 +82,13 @@ const DataCard = ({ user, onSave }) => {
     };
 
     const validateCpf = (cpf) => {
-        cpf = cpf.replace(/\D/g, '');  // Remove todos os não-números
+        cpf = cpf.replace(/\D/g, '');
 
-        if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;  // Checa se todos os números são iguais
+        if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
 
         let soma = 0, resto;
 
-        // Cálculo do primeiro dígito verificador
+
         for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
         resto = (soma * 10) % 11;
         if ((resto === 10) || (resto === 11)) resto = 0;
@@ -58,7 +96,7 @@ const DataCard = ({ user, onSave }) => {
 
         soma = 0;
 
-        // Cálculo do segundo dígito verificador
+
         for (let i = 1; i <= 10; i++) soma += parseInt(cpf.substring(i - 1, i)) * (12 - i);
         resto = (soma * 10) % 11;
         if ((resto === 10) || (resto === 11)) resto = 0;
@@ -67,24 +105,25 @@ const DataCard = ({ user, onSave }) => {
         return true;
     };
 
-    // Função para formatar o telefone
-    const formatPhone = (phone) => {
-        phone = phone.replace(/\D/g, '');  // Remove tudo que não é número
 
-        // Formatar telefone fixo e celular
+
+    const formatPhone = (phone) => {
+        phone = phone.replace(/\D/g, '');
+
+
         if (phone.length <= 10) {
-            phone = phone.replace(/^(\d{2})(\d)/g, '($1) $2');  // Formato DDD
-            phone = phone.replace(/(\d{4})(\d{4})$/, '$1-$2');   // Formato Fixo
+            phone = phone.replace(/^(\d{2})(\d)/g, '($1) $2');
+            phone = phone.replace(/(\d{4})(\d{4})$/, '$1-$2');
         } else if (phone.length === 11) {
-            phone = phone.replace(/^(\d{2})(\d{1})(\d{4})(\d{4})$/, '($1) $2 $3-$4');  // Formato Celular
+            phone = phone.replace(/^(\d{2})(\d{1})(\d{4})(\d{4})$/, '($1) $2 $3-$4');
         }
         return phone;
     };
 
-    // Função para validar telefone
+
     const validatePhone = (phone) => {
-        const numericPhone = phone.replace(/\D/g, '');  // Remove tudo que não é número
-        // Telefone fixo tem 10 dígitos e celular tem 11 dígitos (com o nono dígito iniciando com '9')
+        const numericPhone = phone.replace(/\D/g, '');
+
         return numericPhone.length === 10 || (numericPhone.length === 11 && numericPhone[2] === '9');
     };
 
@@ -117,7 +156,7 @@ const DataCard = ({ user, onSave }) => {
                 setEditableValues(prevState => ({ ...prevState, [field]: formattedCpf }));
 
                 if (numericCpf.length === 11 && !validateCpf(numericCpf)) {
-                    RootToast.show('CPF inválido', {
+                    RootToast.show('CPF inválido, Revise o seu CPF', {
                         duration: 1500,
                         position: 50,
                         backgroundColor: '#FF4747',
@@ -139,7 +178,7 @@ const DataCard = ({ user, onSave }) => {
 
 
     const saveChanges = () => {
-        // Verificar se o campo "Nome" está em branco
+
         if (!editableValues.givenName) {
             RootToast.show('Não é possível deixar o nome em branco', {
                 duration: 1500,
@@ -151,32 +190,7 @@ const DataCard = ({ user, onSave }) => {
             return;
         }
 
-        // Verificar se o campo "Sobrenome" está em branco
-        if (!editableValues.familyName) {
-            RootToast.show('Não é possível deixar o sobrenome em branco', {
-                duration: 1500,
-                position: 50,
-                backgroundColor: '#FF4747',
-                textColor: '#ffffff',
-                shadow: true,
-            });
-            return;
-        }
 
-
-        // Verificar se o CPF é válido antes de salvar
-        if (editableValues.cpf && !validateCpf(editableValues.cpf)) {
-            RootToast.show('CPF inválido. Revise o seu CPF.', {
-                duration: 1500,
-                position: 50,
-                backgroundColor: '#FF4747',
-                textColor: '#ffffff',
-                shadow: true,
-            });
-            return;
-        }
-
-        // Verificar se o telefone é válido antes de salvar
         const numericPhone = editableValues.number.replace(/\D/g, '');
         if (numericPhone.length > 0 && !validatePhone(numericPhone)) {
             RootToast.show('Número de telefone inválido. Não foi possível salvar', {
@@ -189,7 +203,7 @@ const DataCard = ({ user, onSave }) => {
             return;
         }
 
-        // Se todos os campos forem válidos, salvar as mudanças
+
         onSave(editableValues);
 
         setEditingField(null);
@@ -211,12 +225,12 @@ const DataCard = ({ user, onSave }) => {
 
     const renderEditableField = (label, field, placeholder) => (
         <View style={styles.editableFieldContainer}>
-            <Text style={styles.label}>{label}:</Text>
+            <Text style={dynamicStyles.label}>{label}:</Text>
             <View style={styles.editableField}>
                 {editingField === field ? (
                     <TextInput
                         ref={(input) => (inputRefs.current[field] = input)}
-                        style={styles.input}
+                        style={[dynamicStyles.input, dynamicStyles.text]}
                         value={editableValues[field] || ""}
                         onChangeText={(text) => handleInputChange(field, text)}
                         autoFocus={true}
@@ -224,13 +238,16 @@ const DataCard = ({ user, onSave }) => {
                     />
                 ) : (
                     <Text
-                        style={styles.value}
+                        style={[
+                            dynamicStyles.value,
+                            !editableValues[field] && styles.placeholderText
+                        ]}
                         onPress={() => startEditing(field)}
                     >
                         {editableValues[field] ? editableValues[field] : placeholder}
                     </Text>
                 )}
-    
+
                 <View style={styles.iconButtonContainer}>
                     {editingField === field ? (
                         <View style={styles.buttonContainer}>
@@ -249,33 +266,39 @@ const DataCard = ({ user, onSave }) => {
                         </View>
                     ) : (
                         <TouchableOpacity onPress={() => startEditing(field)}>
-                            <Text style={styles.editButtonText}>Editar</Text>
+                            <Text style={dynamicStyles.editButtonText}>Editar</Text>
                         </TouchableOpacity>
                     )}
                 </View>
             </View>
         </View>
     );
-    
 
 
 
-    const renderSection = (title, iconSource, content) => (
-        <View style={styles.container}>
-            <View style={styles.card}>
 
+    const renderSection = (title, iconSourceLight, iconSourceDark, content) => (
+        <View style={dynamicStyles.container}>
+            <View style={dynamicStyles.card}>
                 <View style={styles.iconLeftContainer}>
-                    <Image source={iconSource} style={styles.iconLeft} />
+                    <Image
+                        source={darkMode ? iconSourceDark : iconSourceLight}
+                        style={styles.iconLeft}
+                    />
                 </View>
 
-                <Text style={styles.title}>{title}</Text>
+                <Text style={dynamicStyles.title}>{title}</Text>
 
                 <TouchableOpacity onPress={() => toggleExpand(title)}>
                     <Image
                         source={
                             expandedSection === title
-                                ? require('../../../../assets/arrowup.png')
-                                : require('../../../../assets/arrowdown.png')
+                                ? darkMode
+                                    ? require('../../../../assets/arrowup-dm.png')
+                                    : require('../../../../assets/arrowup.png')
+                                : darkMode
+                                    ? require('../../../../assets/arrowdown-dm.png')
+                                    : require('../../../../assets/arrowdown.png')
                         }
                         style={styles.iconRight}
                     />
@@ -283,32 +306,35 @@ const DataCard = ({ user, onSave }) => {
             </View>
 
             {expandedSection === title && (
-                <View style={styles.expandedContent}>
+                <View style={dynamicStyles.expandedContent}>
                     {content}
                 </View>
             )}
         </View>
     );
 
+
     return (
         <>
             {renderSection(
                 'Dados Pessoais',
                 require('../../../../assets/caneta-do-usuario.png'),
+                require('../../../../assets/caneta-do-usuario1.png'),
                 <>
                     {renderEditableField('Nome', 'givenName')}
-                    {renderEditableField('Sobrenome', 'familyName')}
-                    {renderEditableField('CPF', 'cpf', 'Cadastre aqui seu CPF')}
+                    {renderEditableField('Sobrenome', 'familyName', 'Cadastre seu sobrenome')}
+                    {renderEditableField('CPF', 'cpf', 'cadastre seu CPF')}
                 </>
             )}
 
             {renderSection(
                 'Informações de Contato',
                 require('../../../../assets/phone-call.png'),
+                require('../../../../assets/phone-call1.png'),
                 <>
-                    {renderEditableField('Telefone', 'number', 'Cadastre aqui seu telefone')}
+                    {renderEditableField('Telefone', 'number', 'Cadastre seu telefone com DDD')}
                     <View style={styles.emailLabelContainer}>
-                        <Text style={styles.label}>Email</Text>
+                        <Text style={dynamicStyles.label}>Email</Text>
                         <View style={styles.emailWarningContainer}>
                             <Image
                                 source={require('../../../../assets/alerta.png')}
@@ -324,33 +350,44 @@ const DataCard = ({ user, onSave }) => {
             {renderSection(
                 'Histórico de Pedidos',
                 require('../../../../assets/historico-de-pedidos.png'),
+                require('../../../../assets/historico-de-pedidos1.png'),
                 <>
-                    <Text style={styles.label}>Pedido #1:</Text>
-                    <Text style={styles.value}>Compra de supermercado em 01/10/2024</Text>
-                    <Text style={styles.label}>Pedido #2:</Text>
-                    <Text style={styles.value}>Compra de supermercado em 15/09/2024</Text>
+                    <Text style={dynamicStyles.label}>Pedido #1:</Text>
+                    <Text style={dynamicStyles.value}>Compra de supermercado em 01/10/2024</Text>
+                    <Text style={dynamicStyles.label}>Pedido #2:</Text>
+                    <Text style={dynamicStyles.value}>Compra de supermercado em 15/09/2024</Text>
                 </>
             )}
 
             {renderSection(
                 'Endereços',
                 require('../../../../assets/home-local-alt.png'),
+                require('../../../../assets/home-local-alt1.png'),
                 <>
-                    <Text style={styles.label}>Endereço Principal:</Text>
-                    <Text style={styles.value}>Rua Exemplo, 123</Text>
-                    <Text style={styles.label}>Endereço Secundário:</Text>
-                    <Text style={styles.value}>Av. Teste, 456</Text>
+                    <Text style={dynamicStyles.label}>Endereço Principal:</Text>
+                    <Text style={dynamicStyles.value}>Rua Exemplo, 123</Text>
+                    <Text style={dynamicStyles.label}>Endereço Secundário:</Text>
+                    <Text style={dynamicStyles.value}>Av. Teste, 456</Text>
                 </>
             )}
 
             {renderSection(
                 'Configurações',
                 require('../../../../assets/setting.png'),
+                require('../../../../assets/setting1.png'),
                 <>
-                    <Text style={styles.label}>Notificações:</Text>
-                    <Text style={styles.value}>Ativadas</Text>
-                    <Text style={styles.label}>Modo Escuro:</Text>
-                    <Text style={styles.value}>Desativado</Text>
+                    <Text style={dynamicStyles.label}>Notificações:</Text>
+                    <Text style={dynamicStyles.value}>Ativadas</Text>
+
+                    <Text style={dynamicStyles.label}>Modo Escuro</Text>
+                    <Text style={dynamicStyles.value}>{darkMode ? 'Ativado' : 'Desativado'}</Text>
+
+                    <Toggle
+                        isActive={darkMode}
+                        onToggle={() => setDarkMode(prev => !prev)}
+                    />
+
+
                 </>
             )}
         </>
@@ -359,19 +396,20 @@ const DataCard = ({ user, onSave }) => {
 
 const styles = StyleSheet.create({
 
+
+
     container: {
         marginTop: 10,
         backgroundColor: '#F2F2F2',
     },
     card: {
-        backgroundColor: '#FFFFFF',
         borderRadius: 10,
         padding: 10,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
-        elevation: 5,
+        elevation: 3,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -401,9 +439,9 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     expandedContent: {
-        marginTop: 15,
+        marginTop: 1,
         backgroundColor: '#F2F2F2',
-        borderRadius: 20,
+        borderRadius: 0,
         padding: 5,
     },
     label: {
@@ -449,7 +487,6 @@ const styles = StyleSheet.create({
         marginLeft: 20,
     },
     editButtonText: {
-        color: '#0BB3D9',
         fontSize: 14,
         marginLeft: 15,
         textDecorationLine: 'underline'
@@ -457,11 +494,11 @@ const styles = StyleSheet.create({
     emailLabelContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between', // Alinha o texto e o ícone lado a lado
+        justifyContent: 'space-between',
         marginTop: 15,
     },
     emailWarningContainer: {
-        flexDirection: 'row', // Alinha o ícone e o texto na horizontal
+        flexDirection: 'row',
         alignItems: 'center',
         marginRight: 45,
         marginTop: 10
@@ -473,8 +510,12 @@ const styles = StyleSheet.create({
     },
     emailWarning: {
         fontSize: 12,
-        color: '#FF4747',
-        
+        color: '#d9310b',
+        textShadowColor: '#000',
+
+    },
+    placeholderText: {
+        color: '#808080',
     },
 });
 

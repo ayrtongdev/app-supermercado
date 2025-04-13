@@ -47,7 +47,7 @@ const RegisterScreen = ({ navigation }) => {
 
         try {
             // Envie os dados para o backend
-            const response = await fetch('http://192.168.18.56:3000/users/register', {
+            const response = await fetch('http://192.168.18.48:3000/users/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -58,15 +58,12 @@ const RegisterScreen = ({ navigation }) => {
 
 
             if (response.ok) {
-                const responseBody = await response.text();
-                console.log('Corpo da resposta:', responseBody);
-                // Navegue para a próxima tela após o registro bem-sucedido
                 navigation.navigate('Login');
             } else {
-                // Log do conteúdo da resposta em caso de erro
+               
                 const errorResponseText = await response.text();
                 console.error('Conteúdo da resposta de erro:', errorResponseText);
-                // Lida com erros
+
                 const errorData = await response.json();
                 setErrorMessage(errorData.error);
             }
@@ -78,7 +75,6 @@ const RegisterScreen = ({ navigation }) => {
     };
 
     const handleBack = () => {
-        // Implemente a ação de retorno aqui, por exemplo:
         navigation.goBack();
     };
 

@@ -5,12 +5,69 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import RootToast from 'react-native-root-toast';
-
-
+import useThemeStore from '../../../zustand/themeStore';
+import LottieView from 'lottie-react-native';
 
 const CartScreen = ({ navigation }) => {
   const [cartItems, setCartItems] = useState([]);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const { darkMode } = useThemeStore();
+
+
+  const dynamicStyles = {
+    container: {
+      ...styles.container,
+      backgroundColor: darkMode ? '#212121' : '#F2F2F2',
+    },
+    headerText: {
+      fontWeight: 'bold',
+      color: darkMode ? '#E0E0E0' : '#000000',
+    },
+    clearButtonText: {
+      color: darkMode ? '#0288D1' : '#0BB3D9',
+    },
+    footer: {
+      ...styles.footer,
+      backgroundColor: darkMode ? '#0288D1' : '#0BB3D9',
+    },
+    checkoutButtonText: {
+      ...styles.checkoutButtonText,
+      color: darkMode ? '#0288D1' : '#0BB3D9',
+    },
+    cartItem: {
+      ...styles.cartItem,
+      backgroundColor: darkMode ? '#2A2A2A' : '#ffffff',
+    },
+
+    subtractButton: {
+      ...styles.subtractButton,
+      backgroundColor: darkMode ? '#E0AC00' : '#FFC300',
+    },
+    addButton: {
+      ...styles.addButton,
+      backgroundColor: darkMode ? '#0288D1' : '#0BB3D9',
+    },
+    imageContainer: {
+      ...styles.imageContainer,
+      backgroundColor: darkMode ? '#1E1E1E' : '#F2F2F2',
+    },
+    name: {
+      ...styles.name,
+      color: darkMode ? '#E0E0E0' : '#000000',
+    },
+    description: {
+      ...styles.description,
+      color: darkMode ? '#A3A3A3' : '#666666',
+    },
+    totalPrice: {
+      ...styles.totalPrice,
+      color: darkMode ? '#E0E0E0' : '#000000',
+    },
+
+
+
+  };
 
   useEffect(() => {
     const calculateTotal = () => {
@@ -28,9 +85,11 @@ const CartScreen = ({ navigation }) => {
   useEffect(() => {
 
     const fetchCartData = async () => {
+      setLoading(true);
+
       const userToken = await AsyncStorage.getItem('userToken');
 
-      const response = await fetch('http://192.168.18.56:3000/users/cart', {
+      const response = await fetch('http://192.168.18.48:3000/users/cart', {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${userToken}`,
@@ -51,7 +110,7 @@ const CartScreen = ({ navigation }) => {
       }
 
       setCartItems(data.productIds || []);
-
+      setLoading(false);
     };
     fetchCartData();
   }, []);
@@ -63,7 +122,7 @@ const CartScreen = ({ navigation }) => {
     if (newQuantity < 1) return;
 
     try {
-      const response = await fetch(`http://192.168.18.56:3000/users/cart/${item.productId._id}/quantity`, {
+      const response = await fetch(`http://192.168.18.48:3000/users/cart/${item.productId._id}/quantity`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -106,7 +165,7 @@ const CartScreen = ({ navigation }) => {
     try {
       const userToken = await AsyncStorage.getItem('userToken');
 
-      const response = await fetch('http://192.168.18.56:3000/users/cart/clear', {
+      const response = await fetch('http://192.168.18.48:3000/users/cart/clear', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -157,6 +216,7 @@ const CartScreen = ({ navigation }) => {
     const baseStyle = {
       fontSize: 16,
       marginHorizontal: 8,
+      color: darkMode ? '#E0E0E0' : '#000000',
     };
 
     if (quantity >= 10) {
@@ -196,7 +256,7 @@ const CartScreen = ({ navigation }) => {
       try {
         const userToken = await AsyncStorage.getItem('userToken');
 
-        const response = await fetch(`http://192.168.18.56:3000/users/cart/${item.productId._id}`, {
+        const response = await fetch(`http://192.168.18.48:3000/users/cart/${item.productId._id}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -216,8 +276,6 @@ const CartScreen = ({ navigation }) => {
 
 
         const newCartItems = cartItems.filter(cartItem => cartItem.productId._id !== item.productId._id);
-
-
         setCartItems(newCartItems);
 
 
@@ -245,30 +303,34 @@ const CartScreen = ({ navigation }) => {
     const totalPrice = item.productId.price * item.quantity;
 
     return (
-      <View style={styles.cartItem}>
-        <View style={styles.imageContainer}>
+      <View style={dynamicStyles.cartItem}>
+        <View style={dynamicStyles.imageContainer}>
           <Image source={{ uri: item.productId.imageUrl }} style={styles.image} />
         </View>
         <View style={styles.details}>
-          <Text style={styles.name} numberOfLines={1}>{item.productId.name}</Text>
-          <Text style={styles.description}>{item.productId.description}</Text>
+          <Text style={dynamicStyles.name} numberOfLines={1}>{item.productId.name}</Text>
+          <Text style={dynamicStyles.description}>{item.productId.description}</Text>
           <View style={styles.priceAndQuantityContainer}>
-            <Text style={styles.totalPrice}>R${totalPrice.toFixed(2)}</Text>
+            <Text style={dynamicStyles.totalPrice}>R${totalPrice.toFixed(2)}</Text>
             <View style={getQuantityContainerStyle(item.quantity)}>
               {item.quantity === 1 ? (
                 <TouchableOpacity onPress={handleRemoveItem}>
-                  <Image source={require('../../../../assets/delete.png')} style={styles.trashIcon} />
+                  <Image source={
+                            darkMode
+                                ? require('../../../../assets/delete-dm.png')
+                                : require('../../../../assets/delete.png')
+                        } style={styles.trashIcon} />
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity onPress={() => handleQuantityChange(item, item.quantity - 1)}>
-                  <View style={[styles.subtractButton, getButtonStyle(item.quantity)]}>
+                  <View style={[dynamicStyles.subtractButton, getButtonStyle(item.quantity)]}>
                     <MaterialIcons name="remove" size={18} color="white" />
                   </View>
                 </TouchableOpacity>
               )}
               <Text style={getQuantityTextStyle(item.quantity)}>{item.quantity}</Text>
               <TouchableOpacity onPress={() => handleQuantityChange(item, item.quantity + 1)}>
-                <View style={[styles.addButton, getButtonStyle(item.quantity)]}>
+                <View style={[dynamicStyles.addButton, getButtonStyle(item.quantity)]}>
                   <MaterialIcons name="add" size={18} color="white" />
                 </View>
               </TouchableOpacity>
@@ -280,42 +342,55 @@ const CartScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-
+    <View style={dynamicStyles.container}>
       <View style={styles.headerContainer}>
-
         <TouchableOpacity onPress={() => navigation.goBack()} >
-          <Image source={require('../../../../assets/down.png')} style={[styles.icon, { height: 25, width: 25 }]} />
+          <Image
+            source={
+              darkMode
+                ? require('../../../../assets/back-down-dm.png')
+                : require('../../../../assets/back-down.png')
+            }
+            style={[styles.icon, { height: 20, width: 20 }]}
+          />
         </TouchableOpacity>
-        <Text style={{ fontWeight: 'bold' }}>Carrinho</Text>
+        <Text style={dynamicStyles.headerText}>Carrinho</Text>
         <TouchableOpacity onPress={handleClearCart} style={{ fontSize: 14 }}>
-          <Text style={{ color: '#0BB3D9' }}>Limpar</Text>
+          <Text style={dynamicStyles.clearButtonText}>Limpar</Text>
         </TouchableOpacity>
-
       </View>
-
-      <FlatList
-        data={cartItems}
-        renderItem={renderItem}
-        keyExtractor={item => item.productId._id}
-        ListFooterComponent={<View style={{ height: 20 }} />}
-      />
-      <View style={styles.footer}>
-
-        <TouchableOpacity style={styles.checkoutButton} onPress={() => navigation.navigate('Checkout')}>
-          <Text style={styles.checkoutButtonText}>Finalizar Compra</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.totalText}>Total</Text>
-
-        <Text style={styles.price}>R$ {total.toFixed(2)}</Text>
-
-      </View>
-
-
+  
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <LottieView
+            source={require('../../../../assets/loading.json')}
+            autoPlay
+            loop
+            style={{ width: 150, height: 150 }}
+          />
+        </View>
+      ) : (
+        <>
+          <FlatList
+            data={cartItems}
+            renderItem={renderItem}
+            keyExtractor={item => item.productId._id}
+            ListFooterComponent={<View style={{ height: 20 }} />}
+          />
+          
+          <View style={dynamicStyles.footer}>
+            <TouchableOpacity style={styles.checkoutButton} onPress={() => navigation.navigate('Checkout')}>
+              <Text style={dynamicStyles.checkoutButtonText}>Finalizar Compra</Text>
+            </TouchableOpacity>
+  
+            <Text style={styles.totalText}>Total</Text>
+            <Text style={styles.price}>R$ {total.toFixed(2)}</Text>
+          </View>
+        </>
+      )}
     </View>
-
   );
+  
 };
 
 
@@ -456,7 +531,6 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   checkoutButtonText: {
-    color: '#0BB3D9',
     fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',

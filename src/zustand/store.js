@@ -8,7 +8,7 @@ const useCartStore = create((set) => ({
     fetchCartInfo: async () => {
         const userToken = await AsyncStorage.getItem('userToken');
         try {
-            const response = await fetch('http://192.168.18.56:3000/users/cart/info', {
+            const response = await fetch('http://192.168.18.48:3000/users/cart/info', {
                 headers: { Authorization: `Bearer ${userToken}` },
             });
             const data = await response.json();

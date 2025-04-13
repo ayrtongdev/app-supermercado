@@ -8,18 +8,19 @@ import useCartStore from '../../../zustand/store';
 import LottieView from 'lottie-react-native';
 import useFavoriteStore from '../../../zustand/favoritesStore';
 import { useFocusEffect } from '@react-navigation/native';
+import useThemeStore from '../../../zustand/themeStore';
 
 
 
 
 const fetchSimilarProducts = async (subdepartment) => {
     try {
-        const url = `http://192.168.18.56:3000/products/?subdepartment=${subdepartment}`;
+        const url = `http://192.168.18.48:3000/products/?subdepartment=${subdepartment}`;
         const response = await fetch(url);
         const similarProducts = await response.json();
         return similarProducts;
     } catch (error) {
-        console.log(error);
+        console.error(error);
         return [];
     }
 };
@@ -33,6 +34,7 @@ const formatProductName = (name) => {
 };
 
 const DetailsProductScreen = ({ route, navigation }) => {
+    const { darkMode } = useThemeStore();
     const [product, setProduct] = useState(null);
     const [quantity, setQuantity] = useState(1);
     const [totalPrice, setTotalPrice] = useState(product ? product.price : 0);
@@ -44,14 +46,100 @@ const DetailsProductScreen = ({ route, navigation }) => {
     const setCartInfo = useCartStore(state => state.setCartInfo);
     const fetchCartInfo = useCartStore(state => state.fetchCartInfo);
     const favorites = useFavoriteStore(state => state.favorites);
-    const addFavorite = useFavoriteStore(state => state.addFavorite);
-    const removeFavorite = useFavoriteStore(state => state.removeFavorite);
+    const toggleFavorite = useFavoriteStore((state) => state.toggleFavorite);
 
-    // Adiciona produto ao carrinho
+    const dynamicStyles = {
+        container: {
+            ...styles.container,
+            backgroundColor: darkMode ? '#212121' : '#F2F2F2',
+        },
+        title: {
+            ...styles.title,
+            color: darkMode ? '#E0E0E0' : '#0D0D0D',
+        },
+        descriptionText: {
+            ...styles.descriptionText,
+            color: darkMode ? '#E0E0E0' : '#333',
+        },
+        descriptionText1: {
+            ...styles.descriptionText1,
+            color: darkMode ? '#E0E0E0' : 'gray',
+        },
+        toggleText: {
+            color: darkMode ? '#0288D1' : '#0BB3D9',
+        },
+        similarProductsHeader: {
+            ...styles.similarProductsHeader,
+            color: darkMode ? '#E0E0E0' : '#0D0D0D',
+        },
+        name: {
+            ...styles.name,
+            color: darkMode ? '#E0E0E0' : '#000000',
+        },
+        description: {
+            ...styles.description,
+            color: darkMode ? '#a3a3a3' : 'gray',
+        },
+        price1: {
+            ...styles.price1,
+            color: darkMode ? '#0288D1' : '#0BB3D9',
+        },
+        customButton1: {
+            ...styles.customButton1,
+            backgroundColor: darkMode ? '#0288D1' : '#0BB3D9',
+        },
+        favoriteButton: {
+            ...styles.favoriteButton,
+            backgroundColor: darkMode ? '#2A2A2A' : '#FFFFFF',
+        },
+        similarProductItem: {
+            ...styles.similarProductItem,
+            backgroundColor: darkMode ? '#2A2A2A' : '#fff',
+        },
+        bottomSection: {
+            ...styles.bottomSection,
+            backgroundColor: darkMode ? '#0288D1' : '#0BB3D9',
+        },
+        buttonText: {
+            ...styles.buttonText,
+            color: darkMode ? '#0288D1' : '#0BB3D9',
+        },
+        totalValue: {
+            ...styles.totalValue,
+            color: darkMode ? '#E0E0E0' : '#ffffff',
+        },
+        price: {
+            ...styles.price,
+            color: darkMode ? '#E0E0E0' : '#ffffff',
+        },
+        button: {
+            ...styles.button,
+            backgroundColor: darkMode ? '#E0E0E0' : '#ffffff',
+        },
+        quantityContainer: {
+            ...styles.quantityContainer,
+            backgroundColor: darkMode ? '#2A2A2A' : '#ffffff',
+        },
+        quantityText: {
+            ...styles.quantityText,
+            color: darkMode ? '#E0E0E0' : '#0D0D0D',
+        },
+        subtractButton: {
+            ...styles.subtractButton,
+            backgroundColor: darkMode ? '#E0AC00' : '#FFC300',
+        },
+        addButton: {
+            ...styles.addButton,
+            backgroundColor: darkMode ? '#0288D1' : '#0BB3D9',
+        },
+
+    };
+
+
     const handleAddToCart = async (productId, quantity) => {
         try {
             const userToken = await AsyncStorage.getItem('userToken');
-            const fetchPromise = fetch(`http://192.168.18.56:3000/users/cart/${productId}`, {
+            const fetchPromise = fetch(`http://192.168.18.48:3000/users/cart/${productId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -75,16 +163,16 @@ const DetailsProductScreen = ({ route, navigation }) => {
             }
 
             const cartInfo = await response.json();
-            setCartInfo(cartInfo); // Atualize o estado do carrinho
+            setCartInfo(cartInfo);
 
-            // Fazer uma nova requisição para obter os dados atualizados do carrinho
-            const updatedCartResponse = await fetch('http://192.168.18.56:3000/users/cart/info', {
+
+            const updatedCartResponse = await fetch('http://192.168.18.48:3000/users/cart/info', {
                 headers: { Authorization: `Bearer ${userToken}` },
             });
             const updatedCartInfo = await updatedCartResponse.json();
             setCartInfo(updatedCartInfo);
 
-            // Exibe mensagem de sucesso ao atualizar estado do carrinho.
+
             RootToast.show('Item adicionado ao carrinho', {
                 duration: 1500,
                 position: 80,
@@ -104,31 +192,21 @@ const DetailsProductScreen = ({ route, navigation }) => {
         }
     };
 
-    // Adiciona e remove produto dos favoritos
+
     const handleFavoritePress = async (productId) => {
-        let isFavorite = favorites[productId];
         try {
             const userToken = await AsyncStorage.getItem('userToken');
-            const apiUrl = `http://192.168.18.56:3000/users/favorites/${productId}`;
-            const method = isFavorite ? 'DELETE' : 'PUT';
-            const body = JSON.stringify({ productId, isFavorite: !isFavorite });
+            const apiUrl = `http://192.168.18.48:3000/users/favorites/${productId}`;
+            const method = favorites[productId] ? 'DELETE' : 'PUT';
 
-            const fetchPromise = fetch(apiUrl, {
+            const response = await fetch(apiUrl, {
                 method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${userToken}`,
                 },
-                body,
+                body: JSON.stringify({ productId }),
             });
-
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => {
-                    reject(new Error('Request timed out'));
-                }, 2000);
-            });
-
-            const response = await Promise.race([fetchPromise, timeoutPromise]);
 
             if (!response.ok) {
                 RootToast.show('Tivemos um problema por aqui', {
@@ -138,13 +216,11 @@ const DetailsProductScreen = ({ route, navigation }) => {
                     textColor: '#ffffff',
                     shadow: true,
                 });
+                return;
             }
 
-            if (isFavorite) {
-                removeFavorite(productId);
-            } else {
-                addFavorite(productId);
-            }
+
+            toggleFavorite(productId);
         } catch (error) {
             RootToast.show('Tivemos um problema por aqui', {
                 duration: 1650,
@@ -156,7 +232,6 @@ const DetailsProductScreen = ({ route, navigation }) => {
         }
     };
 
-    // Atualização do Produto e Preço Total
     useEffect(() => {
         if (route.params && route.params.product) {
             setProduct(route.params.product);
@@ -167,7 +242,7 @@ const DetailsProductScreen = ({ route, navigation }) => {
         }
     }, [route.params, product]);
 
-    // Busca de Produtos Similares
+
     useEffect(() => {
         if (product && product.subdepartment) {
             const fetchSimilarProductsAsync = async () => {
@@ -179,46 +254,54 @@ const DetailsProductScreen = ({ route, navigation }) => {
     }, [product]);
 
     useEffect(() => {
-        setQuantity(1); // Reseta a quantidade para 1 sempre que um novo produto for carregado
+        setQuantity(1);
     }, [product]);
 
     useEffect(() => {
-        // Inicia a animação de fade-in sempre que o produto mudar
+
         Animated.timing(fadeAnim, {
-            toValue: 1, // Define a opacidade final
-            duration: 15, // Duração da animação em milissegundos
-            useNativeDriver: true, // Melhora o desempenho
+            toValue: 1,
+            duration: 15,
+            useNativeDriver: true,
         }).start();
-    }, [product]); // Dependência para re-executar a animação quando o produto mudar
+    }, [product]);
 
     const navigateWithFade = (product, subdepartment) => {
-        fadeAnim.setValue(0); // Reseta a opacidade para 0 antes de navegar
+        fadeAnim.setValue(0);
         navigation.navigate('DetailProduct', { product, subdepartment });
     };
 
-    // Renderização dos Produtos Similares
+
     const renderSimilarProduct = ({ item }) => {
         if (excludedProductIds.includes(item._id)) {
             return null;
         }
 
         return (
-            <View key={item._id} style={styles.similarProductItem}>
+            <View key={item._id} style={dynamicStyles.similarProductItem}>
                 <TouchableOpacity
                     style={styles.iconButton1}
                     onPress={() => handleFavoritePress(item._id)}
                 >
                     <Image
-                        source={favorites[item._id] ? require('../../../../assets/love.png') : require('../../../../assets/love1.png')}
+                        source={
+                            favorites[item._id]
+                                ? darkMode
+                                    ? require('../../../../assets/love-dm1.png')
+                                    : require('../../../../assets/love.png')
+                                : darkMode
+                                    ? require('../../../../assets/love-dmi.png')
+                                    : require('../../../../assets/love1.png')
+                        }
                         style={styles.iconFavorite}
                     />
                 </TouchableOpacity>
 
                 <Image source={{ uri: item.imageUrl }} style={styles.productImage} />
-                <Text style={styles.name} numberOfLines={3}>{item.name}</Text>
-                <Text style={styles.description}>{item.description}</Text>
-                <Text style={styles.price1}>R$ {item.price}</Text>
-                <TouchableOpacity style={styles.customButton1}
+                <Text style={dynamicStyles.name} numberOfLines={3}>{item.name}</Text>
+                <Text style={dynamicStyles.description}>{item.description}</Text>
+                <Text style={dynamicStyles.price1}>R$ {item.price}</Text>
+                <TouchableOpacity style={dynamicStyles.customButton1}
                     onPress={() => navigateWithFade(item, item.subdepartment)}
                 >
                     <Image source={require('../../../../assets/add.png')} style={styles.buttonIcon1} />
@@ -226,6 +309,10 @@ const DetailsProductScreen = ({ route, navigation }) => {
             </View>
         );
     };
+
+    const filteredSimilarProducts = similarProducts.filter(
+        item => !excludedProductIds.includes(item._id)
+    );
 
     // Incremento da Quantidade
     const increaseQuantity = () => {
@@ -262,17 +349,32 @@ const DetailsProductScreen = ({ route, navigation }) => {
     }
 
     return (
-        <View style={styles.container}>
+        <View style={dynamicStyles.container}>
             <View style={styles.headerContainer}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Image source={require('../../../../assets/back.png')} style={[styles.icon, { height: 20, width: 20 }]} />
+                    <Image
+                        source={
+                            darkMode
+                                ? require('../../../../assets/back-dm.png')
+                                : require('../../../../assets/back.png')
+                        }
+                        style={[styles.icon, { height: 20, width: 20 }]}
+                    />
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => navigation.navigate('Cart')}>
-                    <Image source={require('../../../../assets/cart.png')} style={[styles.icon, { height: 28, width: 28, marginTop: -5 }]} />
+                    <Image
+                        source={
+                            darkMode
+                                ? require('../../../../assets/cart-dm.png')
+                                : require('../../../../assets/cart.png')
+                        }
+                        style={[styles.icon, { height: 28, width: 28, marginTop: -5 }]}
+                    />
                     <CartItemCount />
                 </TouchableOpacity>
             </View>
+
 
             <View style={styles.contentContainer}>
                 <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
@@ -280,25 +382,33 @@ const DetailsProductScreen = ({ route, navigation }) => {
                         <Image source={{ uri: product.imageUrl }} style={styles.image} />
 
                         <TouchableOpacity
-                            style={styles.favoriteButton}
+                            style={dynamicStyles.favoriteButton}
                             onPress={() => handleFavoritePress(product._id)}
                         >
                             <Image
-                                source={favorites[product._id] ? require('../../../../assets/love.png') : require('../../../../assets/love1.png')}
+                                source={
+                                    favorites[product._id]
+                                        ? darkMode
+                                            ? require('../../../../assets/love-dm1.png')
+                                            : require('../../../../assets/love.png')
+                                        : darkMode
+                                            ? require('../../../../assets/love-dmi.png')
+                                            : require('../../../../assets/love1.png')
+                                }
                                 style={styles.iconFavorite1}
                             />
                         </TouchableOpacity>
 
-                        <Text style={styles.title}>{formatProductName(product.name)}</Text>
+                        <Text style={dynamicStyles.title}>{formatProductName(product.name)}</Text>
                         <View style={styles.descriptionContainer}>
-                            <Text style={styles.descriptionText}>Descrição</Text>
+                            <Text style={dynamicStyles.descriptionText}>Descrição</Text>
                         </View>
 
                         <Text style={styles.descriptionText1}>{product.description}</Text>
 
-                        <View style={styles.quantityContainer}>
+                        <View style={dynamicStyles.quantityContainer}>
                             <TouchableOpacity onPress={decreaseQuantity}>
-                                <View style={styles.subtractButton}>
+                                <View style={dynamicStyles.subtractButton}>
                                     <View style={styles.icon}>
                                         <Image source={require('../../../../assets/subtrair.png')} style={styles.icon} />
                                     </View>
@@ -306,11 +416,11 @@ const DetailsProductScreen = ({ route, navigation }) => {
                             </TouchableOpacity>
 
                             <View style={styles.quantity}>
-                                <Text style={styles.quantityText}>{quantity}</Text>
+                                <Text style={dynamicStyles.quantityText}>{quantity}</Text>
                             </View>
 
                             <TouchableOpacity onPress={increaseQuantity}>
-                                <View style={styles.addButton}>
+                                <View style={dynamicStyles.addButton}>
                                     <View style={styles.icon}>
                                         <Image source={require('../../../../assets/somar.png')} style={styles.icon} />
                                     </View>
@@ -330,46 +440,42 @@ const DetailsProductScreen = ({ route, navigation }) => {
                                 onPress={() => setIsExpanded(!isExpanded)}
                                 style={styles.toggleButton}
                             >
-                                <Text style={styles.toggleText}>
+                                <Text style={dynamicStyles.toggleText}>
                                     {isExpanded ? 'Ver menos' : 'Ver mais'}
                                 </Text>
                             </TouchableOpacity>
                         </View>
 
-                        <View style={styles.similarProductsSection}>
-                            <Text style={styles.similarProductsHeader}>Produtos Similares</Text>
-                            <View><Text> </Text></View>
-                            <View><Text> </Text></View>
-
-                            {similarProducts && similarProducts.length > 0 && (
+                        {filteredSimilarProducts.length > 0 ? (
+                            <View style={styles.similarProductsSection}>
+                                <Text style={dynamicStyles.similarProductsHeader}>Produtos Similares</Text>
+                                <View><Text> </Text></View>
+                                <View><Text> </Text></View>
                                 <SwiperFlatList
-                                    data={similarProducts}
+                                    data={filteredSimilarProducts}
                                     renderItem={renderSimilarProduct}
                                     keyExtractor={(item) => item._id}
                                     snapToInterval={15}
                                 />
-                            )}
-
-                            {similarProducts && similarProducts.length === 0 && (
-                                <Text style={styles.noSimilarProducts}>Nenhum produto similar encontrado</Text>
-                            )}
-                        </View>
-
+                            </View>
+                        ) : (
+                            null
+                        )}
                         <View><Text> </Text></View>
                         <View><Text> </Text></View>
                     </ScrollView>
                 </Animated.View>
             </View>
 
-            <View style={styles.bottomSection}>
-                <TouchableOpacity style={styles.button} onPress={() => handleAddToCart(product._id, quantity)}>
-                    <Text style={styles.buttonText}>Adicionar ao carrinho</Text>
+            <View style={dynamicStyles.bottomSection}>
+                <TouchableOpacity style={dynamicStyles.button} onPress={() => handleAddToCart(product._id, quantity)}>
+                    <Text style={dynamicStyles.buttonText}>Adicionar ao carrinho</Text>
                 </TouchableOpacity>
 
-                <Text style={styles.totalValue}>Valor total</Text>
+                <Text style={dynamicStyles.totalValue}>Preço Total</Text>
 
                 {product && (
-                    <Text style={styles.price}>R$ {totalPrice.toFixed(2)}</Text>
+                    <Text style={dynamicStyles.price}>R$ {totalPrice.toFixed(2)}</Text>
                 )}
             </View>
         </View>
@@ -379,8 +485,8 @@ const DetailsProductScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     favoriteButton: {
         position: 'absolute',
-        top: 290,  
-        left: 15,  
+        top: 290,
+        left: 15,
         backgroundColor: '#fff',
         borderRadius: 50,
         padding: 10,
@@ -400,7 +506,7 @@ const styles = StyleSheet.create({
         left: 20,
         right: 20,
         zIndex: 10,
-        
+
     },
 
     buttonIcon1: {
@@ -610,10 +716,6 @@ const styles = StyleSheet.create({
         marginLeft: 20,
     },
 
-    toggleText: {
-        color: '#0BB3D9'
-    },
-
     descriptionText2: {
         color: 'gray',
         fontSize: 14,
@@ -667,7 +769,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
-        
+
     },
 
     quantityText: {
@@ -697,7 +799,6 @@ const styles = StyleSheet.create({
     },
 
     title: {
-        color: '#0D0D0D',
         fontSize: 18,
         fontWeight: 'bold',
         marginLeft: 20,

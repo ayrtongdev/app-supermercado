@@ -1,21 +1,32 @@
 import React from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
+import useThemeStore from '../../../zustand/themeStore';
 
 const SearchBar = () => {
   const navigation = useNavigation();
+  const { darkMode } = useThemeStore();
+
+  const dynamicStyles = {
+    container: {
+      ...styles.container,
+      backgroundColor: darkMode ? '#2A2A2A' : '#FFFFFF',
+    },
+    iconColor: darkMode ? '#E0E0E0' : '#000000',
+  };
 
   const handleSearchPress = () => {
-    navigation.navigate('Search'); // Direciona o usuário para a tela de pesquisa
+    navigation.navigate('Search'); 
   };
 
   return (
-    <TouchableOpacity onPress={handleSearchPress} style={styles.container}>
-      <Icon name="search" size={24} color="#000" style={styles.iconStyle} />
+    <TouchableOpacity onPress={handleSearchPress} style={dynamicStyles.container}>
+      <Icon name="search" size={24} color={dynamicStyles.iconColor} style={styles.iconStyle} />
       <TextInput
-        editable={false} // Impede que o usuário edite, já que é apenas um botão agora
+        editable={false} 
         placeholder="Busque por ovos, frutas e mais..."
+        placeholderTextColor={darkMode ? '#E0E0E0' : '#000000'}
         style={styles.input}
       />
     </TouchableOpacity>

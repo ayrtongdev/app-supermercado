@@ -1,7 +1,5 @@
-//HomeScreen.js
-
 import React, { useEffect, useState } from 'react';
-import { View, TouchableOpacity, Image, Text, ScrollView, Dimensions, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Image, Text, ScrollView, StyleSheet, Dimensions, BackHandler  } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import CilindricalMenu from '../../menu/CilindricalMenu';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,62 +11,78 @@ import Department from './department';
 import RootToast from 'react-native-root-toast';
 import CartItemCount from '../../cartinfo/CartItemCount';
 import LottieView from 'lottie-react-native';
-import useKeyboard from '../../hooks/useKeyboard';
 import useFavoriteStore from '../../../zustand/favoritesStore';
 import axios from 'axios';
+import useThemeStore from '../../../zustand/themeStore';
 
-
-const fetchProducts = async (category) => {
+const fetchProducts = async (department) => {
   try {
-    const response = await fetch(`http://192.168.18.56:3000/products/?category=${category}`);
-
+    const response = await fetch(`http://192.168.18.48:3000/products/?department=${department}`);
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
     const data = await response.json();
-
-    const productsWithSubdepartment = data.map(product => ({
-      ...product,
-      subdepartment: product.subdepartment || 'Outros'
-    }));
-
-    return productsWithSubdepartment;
+    return data;
   } catch (error) {
-    console.error('Erro ao buscar os produtos:', error);
+    console.error(`Erro ao buscar os produtos do departamento ${department}:`, error);
     return [];
   }
 };
 
-
-
 const HomeScreen = ({ navigation }) => {
-  const isKeyboardVisible = useKeyboard();
   const [user, setUser] = useState(null);
   const [products, setProducts] = useState({ popularProducts: [], forYouProducts: [] });
   const [opacity, setOpacity] = useState(1);
   const [interactive, setInteractive] = useState(true);
   const [banners, setBanners] = useState([]);
   const [greeting, setGreeting] = useState('Olá');
-
   const [selectedDepartmentId, setSelectedDepartmentId] = useState(null);
-
+  const { darkMode } = useThemeStore();
 
   const fetchCartInfo = useCartStore(state => state.fetchCartInfo);
   const favorites = useFavoriteStore(state => state.favorites);
   const fetchFavorites = useFavoriteStore(state => state.fetchFavorites);
-  const addFavorite = useFavoriteStore(state => state.addFavorite);
-  const removeFavorite = useFavoriteStore(state => state.removeFavorite);
+  const toggleFavorite = useFavoriteStore((state) => state.toggleFavorite);
+
+  useEffect(() => {
+    const fetchProductsAndSetState = async () => {
+      const allProducts = await fetchProducts();
+      const popularProductsData = allProducts.filter(product => product.department.includes('Popular'));
+      const forYouProductsData = allProducts.filter(product => product.department.includes('Para Você'));
+      setProducts({
+        popularProducts: popularProductsData,
+        forYouProducts: forYouProductsData
+      });
+    };
+
+    fetchProductsAndSetState();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        BackHandler.exitApp(); 
+        return true; 
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [])
+  );
+
 
   useFocusEffect(
     React.useCallback(() => {
       fetchCartInfo();
       fetchFavorites();
       fetchUserData();
-      determineGreeting();
     }, [])
   );
 
-  // Função para definir a saudação com base na hora atual
+  useEffect(() => {
+    determineGreeting();
+  }, []);
+
   const determineGreeting = () => {
     const currentHour = new Date().getHours();
     if (currentHour < 12) {
@@ -80,9 +94,80 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
+  const dynamicStyles = {
+    container: {
+      ...styles.container,
+      backgroundColor: darkMode ? '#212121' : '#F2F2F2',
+    },
+    headerText: {
+      ...styles.headerText,
+      color: darkMode ? '#E0E0E0' : '#000000',
+    },
+    suggestionText: {
+      ...styles.suggestionText,
+      color: darkMode ? '#E0E0E0' : '#000000',
+    },
+    carouselItem: {
+      ...styles.carouselItem,
+      backgroundColor: darkMode ? '#2A2A2A' : '#FFFFFF',
+    },
+    name: {
+      ...styles.name,
+      color: darkMode ? '#E0E0E0' : '#000000',
+    },
+    description: {
+      ...styles.description,
+      color: darkMode ? '#a3a3a3' : 'gray',
+    },
+    carouselItemForYou: {
+      ...styles.carouselItemForYou,
+      backgroundColor: darkMode ? '#2A2A2A' : '#FFFFFF',
+    },
+    nameBox3: {
+      ...styles.nameBox3,
+      color: darkMode ? '#E0E0E0' : '#0D0D0D',
+    },
+    descriptionBox3: {
+      ...styles.descriptionBox3,
+      color: darkMode ? '#A3A3A3' : 'gray',
+    },
+    cylindricalContainer: {
+      ...styles.cylindricalContainer,
+      backgroundColor: darkMode ? '#0288D1' : '#0BB3D9',
+    },
+    greetingText: {
+      ...styles.greetingText,
+      color: darkMode ? '#E0E0E0' : '#FFFFFF',
+    },
+    exploreText: {
+      ...styles.exploreText,
+      color: darkMode ? '#E0E0E0' : '#FFFFFF',
+    },
+    bold: {
+      ...styles.bold,
+      color: darkMode ? '#E0E0E0' : '#FFFFFF',
+    },
+    customButton1: {
+      ...styles.customButton1,
+      backgroundColor: darkMode ? '#0288D1' : '#0BB3D9',
+    },
+    customButton: {
+      ...styles.customButton,
+      backgroundColor: darkMode ? '#0288D1' : '#0BB3D9',
+    },
+    price: {
+      ...styles.price,
+      color: darkMode ? '#0288D1' : '#0BB3D9',
+    },
+    priceBox3: {
+      ...styles.priceBox3,
+      color: darkMode ? '#0288D1' : '#0BB3D9',
+    },
+  };
+
   const fetchBanners = async () => {
     try {
-      const response = await fetch('http://192.168.18.56:3000/users/banners');
+      const response = await fetch('http://192.168.18.48:3000/users/banners');
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -97,7 +182,7 @@ const HomeScreen = ({ navigation }) => {
     const userToken = await AsyncStorage.getItem('userToken');
 
     try {
-      const response = await axios.get('http://192.168.18.56:3000/users/user', {
+      const response = await axios.get('http://192.168.18.48:3000/users/user', {
         headers: {
           Authorization: `Bearer ${userToken}`,
         },
@@ -108,32 +193,20 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-
   const handleFavoritePress = async (productId) => {
     try {
-
       const userToken = await AsyncStorage.getItem('userToken');
-
-      const apiUrl = `http://192.168.18.56:3000/users/favorites/${productId}`;
+      const apiUrl = `http://192.168.18.48:3000/users/favorites/${productId}`;
       const method = favorites[productId] ? 'DELETE' : 'PUT';
-      const body = JSON.stringify({ productId });
 
-      const fetchPromise = fetch(apiUrl, {
+      const response = await fetch(apiUrl, {
         method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${userToken}`,
         },
-        body,
+        body: JSON.stringify({ productId }),
       });
-
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Request timed out'));
-        }, 2000);
-      });
-
-      const response = await Promise.race([fetchPromise, timeoutPromise]);
 
       if (!response.ok) {
         RootToast.show('Tivemos um problema por aqui', {
@@ -146,11 +219,7 @@ const HomeScreen = ({ navigation }) => {
         return;
       }
 
-      if (favorites[productId]) {
-        removeFavorite(productId);
-      } else {
-        addFavorite(productId);
-      }
+      toggleFavorite(productId);
     } catch (error) {
       RootToast.show('Tivemos um problema por aqui', {
         duration: 1650,
@@ -162,18 +231,6 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-
-
-  useEffect(() => {
-    const fetchProductsAndSetState = async () => {
-      const popularProducts = await fetchProducts('popular');
-      const forYouProducts = await fetchProducts('para você');
-      setProducts({ popularProducts, forYouProducts });
-    };
-
-    fetchProductsAndSetState();
-  }, []);
-
   useEffect(() => {
     const fetchBannersAndSetState = async () => {
       const banners = await fetchBanners();
@@ -183,7 +240,7 @@ const HomeScreen = ({ navigation }) => {
     fetchBannersAndSetState();
   }, []);
 
-  if (!products || (products.popularProducts.length === 0 && products.forYouProducts.length === 0)) {
+  if (products.popularProducts.length === 0 && products.forYouProducts.length === 0) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <LottieView
@@ -206,7 +263,6 @@ const HomeScreen = ({ navigation }) => {
     } else {
       setInteractive(true);
     }
-
   };
 
   const renderBannerItem = ({ item }) => (
@@ -216,62 +272,82 @@ const HomeScreen = ({ navigation }) => {
   );
 
   const renderProductItem = ({ item }) => (
-
-    <View style={styles.carouselItem}>
+    <View style={dynamicStyles.carouselItem}>
       <TouchableOpacity
         style={styles.iconButton1}
         onPress={() => handleFavoritePress(item._id)}
       >
         <Image
-          source={favorites[item._id] ? require('../../../../assets/love.png') : require('../../../../assets/love1.png')}
+          source={
+            favorites[item._id]
+              ? darkMode
+                ? require('../../../../assets/love-dm1.png') // Favoritado no Modo Escuro
+                : require('../../../../assets/love.png') // Favoritado no Modo Claro
+              : darkMode
+              ? require('../../../../assets/love-dmi.png') // Não favoritado no Modo Escuro
+              : require('../../../../assets/love1.png') // Não favoritado no Modo Claro
+          }
           style={styles.icon}
         />
       </TouchableOpacity>
       <Image source={{ uri: item.imageUrl }} style={styles.productImage} />
-      <Text style={styles.name} numberOfLines={3}>{item.name}</Text>
-      <Text style={styles.description} >{item.description}</Text>
-      <Text style={styles.price}>R$ {item.price}</Text>
-      <TouchableOpacity style={styles.customButton1}
-        onPress={() => navigation.navigate('DetailProduct', { product: item, subdepartment: item.subdepartment })}
+      <Text style={dynamicStyles.name} numberOfLines={1}>{item.name}</Text>
+      <Text style={dynamicStyles.description}>{item.description}</Text>
+      <Text style={dynamicStyles.price}>R$ {item.price}</Text>
+      <TouchableOpacity
+        style={dynamicStyles.customButton1}
+        onPress={() =>
+          navigation.navigate('DetailProduct', {
+            product: item,
+            subdepartment: item.subdepartment,
+          })
+        }
       >
-        <Image source={require('../../../../assets/add.png')} style={styles.buttonIcon1} />
+        <Image
+          source={require('../../../../assets/add.png')}
+          style={styles.buttonIcon1}
+        />
       </TouchableOpacity>
     </View>
-
   );
+  
+  
 
   const renderProductItemForYou = ({ item }) => (
-    <View style={styles.carouselItemForYou}>
+    <View style={dynamicStyles.carouselItemForYou}>
       <TouchableOpacity
         style={styles.iconButton1}
         onPress={() => handleFavoritePress(item._id)}
       >
         <Image
-          source={favorites[item._id] ? require('../../../../assets/love.png') : require('../../../../assets/love1.png')}
+          source={
+            favorites[item._id]
+              ? darkMode
+                ? require('../../../../assets/love-dm1.png') // Favoritado no Modo Escuro
+                : require('../../../../assets/love.png') // Favoritado no Modo Claro
+              : darkMode
+              ? require('../../../../assets/love-dmi.png') // Não favoritado no Modo Escuro
+              : require('../../../../assets/love1.png') // Não favoritado no Modo Claro
+          }
           style={styles.icon}
         />
       </TouchableOpacity>
       <Image source={{ uri: item.imageUrl }} style={styles.productImage2} />
-      <Text style={styles.nameBox3}>{item.name}</Text>
-      <Text style={styles.descriptionBox3}>{item.description}</Text>
-      <Text style={styles.priceBox3}>R$ {item.price}</Text>
-      <TouchableOpacity style={styles.customButton}
+      <Text style={dynamicStyles.nameBox3}>{item.name}</Text>
+      <Text style={dynamicStyles.descriptionBox3}>{item.description}</Text>
+      <Text style={dynamicStyles.priceBox3}>R$ {item.price}</Text>
+      <TouchableOpacity style={dynamicStyles.customButton}
         onPress={() => navigation.navigate('DetailProduct', { product: item })}
       >
         <Image source={require('../../../../assets/add.png')} style={styles.buttonIcon1} />
       </TouchableOpacity>
-
     </View>
   );
 
-
   return (
-    <View style={styles.container}>
-
-      <View style={[styles.cylindricalContainer, { opacity, pointerEvents: interactive ? 'auto' : 'none' }]}>
-
+    <View style={dynamicStyles.container}>
+      <View style={[dynamicStyles.cylindricalContainer, { opacity, pointerEvents: interactive ? 'auto' : 'none' }]}>
         <View style={styles.menuButtonContainer}>
-
           <TouchableOpacity style={styles.menuCircle} onPress={() => navigation.navigate('Profile')} activeOpacity={interactive ? 1 : 0.5}>
             {user && (
               <Image source={{ uri: user.photoUrl }} style={styles.userIcon} />
@@ -280,22 +356,18 @@ const HomeScreen = ({ navigation }) => {
 
           <View style={styles.textContainer}>
             {user && (
-              <Text style={styles.greetingText}>{greeting},<Text style={styles.bold}> {user.givenName}</Text> </Text>
+              <Text style={dynamicStyles.greetingText}>{greeting},<Text style={dynamicStyles.bold}> {user.givenName}</Text> </Text>
             )}
-            <Text style={styles.exploreText}>Encontre tudo o que precisa aqui.</Text>
+            <Text style={dynamicStyles.exploreText}>Encontre tudo o que precisa aqui.</Text>
           </View>
-
         </View>
 
         <View style={styles.menuButtonContainer}>
-
           <TouchableOpacity style={styles.menuButton} onPress={() => navigation.navigate('Cart')} activeOpacity={interactive ? 1 : 0.5} >
             <Image source={require('../../../../assets/menu.png')} style={styles.menuIcon} />
             <CartItemCount />
           </TouchableOpacity>
-
         </View>
-
       </View>
 
       <ScrollView onScroll={handleScroll} contentContainerStyle={styles.scrollViewContent}>
@@ -311,43 +383,36 @@ const HomeScreen = ({ navigation }) => {
             showPagination={true}
             paginationStyle={{ bottom: -35 }}
             paginationStyleItem={{ width: 5, height: 5, borderRadius: 5 }}
-            paginationActiveColor="#0BB3D9"
+            paginationActiveColor={darkMode ? '#0288D1' : '#0BB3D9'}
             snapToInterval={15}
           />
         </View>
 
         <Department selectedDepartment={selectedDepartmentId} navigation={navigation} />
 
-        <Text style={styles.headerText}>Populares</Text>
-
+        <Text style={dynamicStyles.headerText}>Populares</Text>
         <View style={styles.carouselContainer}>
           <SwiperFlatList
             data={products.popularProducts}
             renderItem={renderProductItem}
-            onSwipeLeft={(item) => (`Swiped left: ${item.name}`)}
-            onSwipeRight={(item) => (`Swiped right: ${item.name}`)}
             keyExtractor={(item) => item._id}
             snapToInterval={15}
           />
         </View>
 
-        <Text style={styles.suggestionText}>Recomendados</Text>
-
+        <Text style={dynamicStyles.suggestionText}>Recomendados</Text>
         <View style={styles.carouselContainerForYou}>
           <SwiperFlatList
             data={products.forYouProducts}
             renderItem={renderProductItemForYou}
-            onSwipeLeft={(item) => (`Swiped left: ${item.name}`)}
-            onSwipeRight={(item) => (`Swiped right: ${item.name}`)}
             keyExtractor={(item) => item._id}
             snapToInterval={15}
           />
         </View>
       </ScrollView>
 
-      {!isKeyboardVisible && <CilindricalMenu navigation={navigation} />}
-      {!isKeyboardVisible && <CartInfo />}
-
+      <CilindricalMenu navigation={navigation} />
+      <CartInfo />
     </View>
   );
 };
@@ -400,7 +465,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 3,
   },
 
   suggestionText: {
@@ -423,7 +488,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 3,
   },
 
   Box3: {

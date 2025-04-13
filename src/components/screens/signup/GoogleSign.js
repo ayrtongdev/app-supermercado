@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { GoogleSignin, statusCodes, GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import { View, ActivityIndicator } from 'react-native';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import useThemeStore from '../../../zustand/themeStore';
 
 export default function GoogleSign({ onLoginSuccess, onLoginError, navigation }) {
     const [loading, setLoading] = useState(false);
@@ -25,14 +26,15 @@ export default function GoogleSign({ onLoginSuccess, onLoginError, navigation })
         }
     };
 
+  
+
     const signIn = async () => {
-        try { 
+        try {
             setLoading(true);
             await GoogleSignin.hasPlayServices();
             const userInfo = await GoogleSignin.signIn();
 
-            // Enviar as informações do usuário para o backend
-            const response = await axios.post('http://192.168.18.56:3000/users/google-login', {
+            const response = await axios.post('http://192.168.18.48:3000/users/google-login', {
                 googleId: userInfo.user.id,
                 email: userInfo.user.email,
                 name: userInfo.user.name,
@@ -48,9 +50,12 @@ export default function GoogleSign({ onLoginSuccess, onLoginError, navigation })
                 console.log('Token received from backend:', token);
 
                 if (token) {
-                    await storeTokenAsync(token);  // Armazena o token usando AsyncStorage
+                    await storeTokenAsync(token);
+                    // Supondo que o backend retorne os dados do usuário, incluindo um id único:
+                    const userId = response.data.user.id;
+                    // Carrega a preferência de tema específica para este usuário
+                    await useThemeStore.getState().loadTheme(userId);
                     onLoginSuccess && onLoginSuccess(response.data);
-                    // Redireciona o usuário após o login bem-sucedido
                     navigation.navigate('Home');
                 } else {
                     console.error('No token received in the response:', response.data);
@@ -71,6 +76,7 @@ export default function GoogleSign({ onLoginSuccess, onLoginError, navigation })
             }
         }
     };
+
 
     return (
         <View>

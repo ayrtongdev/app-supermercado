@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useFavoriteStore from '../../../zustand/favoritesStore';
 import RootToast from 'react-native-root-toast';
+import useThemeStore from '../../../zustand/themeStore';
 
 const truncateName = (name) => {
     const words = name.split(' ');
@@ -16,8 +17,8 @@ const truncateName = (name) => {
 const ProductCard = ({ product, navigation }) => {
     const favorites = useFavoriteStore(state => state.favorites);
     const fetchFavorites = useFavoriteStore(state => state.fetchFavorites);
-    const addFavorite = useFavoriteStore(state => state.addFavorite);
-    const removeFavorite = useFavoriteStore(state => state.removeFavorite);
+    const toggleFavorite = useFavoriteStore((state) => state.toggleFavorite);
+    const { darkMode } = useThemeStore();
 
     useFocusEffect(
         React.useCallback(() => {
@@ -28,7 +29,7 @@ const ProductCard = ({ product, navigation }) => {
     const handleFavoritePress = async (productId) => {
         try {
             const userToken = await AsyncStorage.getItem('userToken');
-            const apiUrl = `http://192.168.18.56:3000/users/favorites/${productId}`;
+            const apiUrl = `http://192.168.18.48:3000/users/favorites/${productId}`;
             const method = favorites[productId] ? 'DELETE' : 'PUT';
 
             const response = await fetch(apiUrl, {
@@ -37,6 +38,7 @@ const ProductCard = ({ product, navigation }) => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${userToken}`,
                 },
+                body: JSON.stringify({ productId }),
             });
 
             if (!response.ok) {
@@ -50,11 +52,8 @@ const ProductCard = ({ product, navigation }) => {
                 return;
             }
 
-            if (favorites[productId]) {
-                removeFavorite(productId);
-            } else {
-                addFavorite(productId);
-            }
+            // Alterna o estado de favorito após a sincronização bem-sucedida
+            toggleFavorite(productId);
         } catch (error) {
             RootToast.show('Tivemos um problema por aqui', {
                 duration: 1650,
@@ -66,22 +65,54 @@ const ProductCard = ({ product, navigation }) => {
         }
     };
 
+    const dynamicStyles = {
+        card: {
+            ...styles.card,
+            backgroundColor: darkMode ? '#2A2A2A' : '#FFFFFF',
+        },
+        name: {
+            ...styles.name,
+            color: darkMode ? '#E0E0E0' : '#000000',
+        },
+        description: {
+            ...styles.description,
+            color: darkMode ? '#a3a3a3' : 'gray',
+        },
+        price: {
+            ...styles.price,
+            color: darkMode ? '#0288D1' : '#0BB3D9',
+        },
+        customButton1: {
+            ...styles.customButton1,
+            backgroundColor: darkMode ? '#0288D1' : '#0BB3D9',
+        },
+        
+    };
+    
     return (
-        <View style={styles.card}>
+        <View style={dynamicStyles.card}>
             <TouchableOpacity
                 style={styles.iconButton1}
                 onPress={() => handleFavoritePress(product._id)}
             >
-                <Image
-                    source={favorites[product._id] ? require('../../../../assets/love.png') : require('../../../../assets/love1.png')}
+               <Image
+                    source={
+                        favorites[product._id]
+                            ? darkMode
+                                ? require('../../../../assets/love-dm1.png') 
+                                : require('../../../../assets/love.png')
+                            : darkMode
+                                ? require('../../../../assets/love-dmi.png') 
+                                : require('../../../../assets/love1.png') 
+                    }
                     style={styles.icon}
                 />
             </TouchableOpacity>
             <Image source={{ uri: product.imageUrl }} style={styles.image} />
-            <Text style={styles.name}>{truncateName(product.name)}</Text>
-            <Text style={styles.description} >{product.description}</Text>
-            <Text style={styles.price}>R${product.price}</Text>
-            <TouchableOpacity style={styles.customButton1}
+            <Text style={dynamicStyles.name}>{truncateName(product.name)}</Text>
+            <Text style={dynamicStyles.description} >{product.description}</Text>
+            <Text style={dynamicStyles.price}>R${product.price}</Text>
+            <TouchableOpacity style={dynamicStyles.customButton1}
                 onPress={() => navigation.navigate('DetailProduct', { product: product, subdepartment: product.subdepartment })}
             >
                 <Image source={require('../../../../assets/add.png')} style={styles.buttonIcon1} />
@@ -103,7 +134,7 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
-        elevation: 5,
+        elevation: 3,
     },
     customButton1: {
         backgroundColor: '#0BB3D9',
@@ -155,7 +186,6 @@ const styles = StyleSheet.create({
     name: {
         color: '#0D0D0D',
         fontSize: 12,
-        fontWeight: 'bold',
         marginLeft: 10,
         width: 120,
         height: 40,

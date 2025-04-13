@@ -8,7 +8,7 @@ const LoginScreen = ({ navigation }) => {
  
     const handleLogin = async () => {
         try {
-            const response = await fetch('http://192.168.18.56:3000/users/login', {
+            const response = await fetch('http://192.168.18.48:3000/users/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -25,10 +25,8 @@ const LoginScreen = ({ navigation }) => {
 
             const data = await response.json();
             
-            // Armazene o token de autenticação no armazenamento local
             await AsyncStorage.setItem('userToken', data.token);
             
-            // Navegue para a próxima tela
             navigation.navigate('Home');
         } catch (error) {
             console.error(error);

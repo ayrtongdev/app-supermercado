@@ -3,29 +3,42 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import useCartStore from '../../zustand/store';
 import { useNavigation } from '@react-navigation/native';
+import useThemeStore from '../../zustand/themeStore';
 
 const CartInfo = ({ customStyle = {} }) => {
     const cartInfo = useCartStore(state => state.cartInfo);
     const navigation = useNavigation();
-
+    const { darkMode } = useThemeStore();
 
     if (cartInfo.itemCount === 0) {
         return null;
     }
 
+    const dynamicStyles = {
+        container: {
+            ...styles.container,
+            backgroundColor: darkMode ? '#0288D1' : '#0BB3D9',
+        },
+        buttonText: {
+            ...styles.buttonText,
+            color: darkMode ? '#0288D1' : '#0BB3D9',
+        },
+        
+    };
+
     return (
-        <View style={[styles.container, customStyle]}>
+        <View style={[dynamicStyles.container, customStyle]}>
             <View>
                 <Text style={styles.totalText}>Total</Text>
             </View>
             <View style={styles.textContainer}>
                 <Text style={styles.text}>
-                    R$ {typeof cartInfo.totalValue === 'number' ? cartInfo.totalValue.toFixed(2) : '0.00'} |    
+                    R$ {typeof cartInfo.totalValue === 'number' ? cartInfo.totalValue.toFixed(2) : '0.00'} |
                 </Text>
                 <Text style={styles.textItem}> {cartInfo.itemCount} itens </Text>
             </View>
             <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Cart')}>
-                <Text style={styles.buttonText}>Ver carrinho</Text>
+                <Text style={dynamicStyles.buttonText}>Ver carrinho</Text>
             </TouchableOpacity>
         </View>
     );

@@ -12,12 +12,36 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DataCard from './DataCard';
 import useKeyboard from '../../hooks/useKeyboard';
 import RootToast from 'react-native-root-toast';
+import useFavoriteStore from '../../../zustand/favoritesStore';
+import useThemeStore from '../../../zustand/themeStore';
+
+
 
 const ProfileScreen = () => {
   const isKeyboardVisible = useKeyboard();
   const [user, setUser] = useState(null);
   const fetchCartInfo = useCartStore(state => state.fetchCartInfo);
+  const clearFavorites = useFavoriteStore(state => state.clearFavorites);
+  const { darkMode } = useThemeStore();
   const navigation = useNavigation();
+
+ 
+  const dynamicStyles = {
+    container: {
+      ...styles.container,
+      backgroundColor: darkMode ? '#212121' : '#F2F2F2',
+    },
+    text: {
+      color: darkMode ? '#F2F2F2' : '#000000',
+    },
+    faleButton: {
+      ...styles.faleButton,
+      backgroundColor: darkMode ? '#0288D1' : '#0BB3D9',
+    },
+    
+  };
+
+
 
   useEffect(() => {
     GoogleSignin.configure({
@@ -42,6 +66,7 @@ const ProfileScreen = () => {
       await GoogleSignin.revokeAccess();
       await GoogleSignin.signOut();
       await AsyncStorage.removeItem('userToken');
+      clearFavorites();
       navigation.navigate('Signup');
     } catch (error) {
       console.error('Erro ao fazer logout: ', error);
@@ -52,7 +77,7 @@ const ProfileScreen = () => {
     const userToken = await AsyncStorage.getItem('userToken');
 
     try {
-      const response = await axios.get('http://192.168.18.56:3000/users/user', {
+      const response = await axios.get('http://192.168.18.48:3000/users/user', {
         headers: {
           Authorization: `Bearer ${userToken}`,
         },
@@ -67,92 +92,95 @@ const ProfileScreen = () => {
     const userToken = await AsyncStorage.getItem('userToken');
 
     const dataToSend = {};
-    let fieldsUpdated = false; // Flag para verificar se houve alguma alteração
+    let fieldsUpdated = false;
 
-    // Verificar se o nome foi alterado
+
     if (updatedUserData.givenName !== user.givenName) {
-        dataToSend.givenName = updatedUserData.givenName;
-        RootToast.show('Nome alterado com sucesso!', { // Exibir pop-up específico para o nome
-            duration: 1500,
-            position: 50,
-            backgroundColor: '#4CAF50', // Verde
-            textColor: '#ffffff',
-            shadow: true,
-        });
-        fieldsUpdated = true; // Marca que houve uma alteração
+      dataToSend.givenName = updatedUserData.givenName;
+      RootToast.show('Nome alterado com sucesso!', {
+        duration: 1500,
+        position: 50,
+        backgroundColor: '#4CAF50',
+        textColor: '#ffffff',
+        shadow: true,
+      });
+      fieldsUpdated = true;
     }
 
-    // Verificar se o sobrenome foi alterado
+
     if (updatedUserData.familyName !== user.familyName) {
-        dataToSend.familyName = updatedUserData.familyName;
-        RootToast.show('Sobrenome alterado com sucesso!', { // Exibir pop-up específico para o sobrenome
-            duration: 1500,
-            position: 50,
-            backgroundColor: '#4CAF50', // Verde
-            textColor: '#ffffff',
-            shadow: true,
-        });
-        fieldsUpdated = true; 
+      dataToSend.familyName = updatedUserData.familyName || '';
+      RootToast.show('Sobrenome alterado com sucesso!', {
+        duration: 1500,
+        position: 50,
+        backgroundColor: '#4CAF50',
+        textColor: '#ffffff',
+        shadow: true,
+      });
+      fieldsUpdated = true;
     }
 
-    // Verificar se o CPF foi alterado
+
     if (updatedUserData.cpf !== user.cpf) {
-        dataToSend.cpf = updatedUserData.cpf;
-        RootToast.show('CPF alterado com sucesso!', { // Exibir pop-up específico para o CPF
-            duration: 1500,
-            position: 50,
-            backgroundColor: '#4CAF50', // Verde
-            textColor: '#ffffff',
-            shadow: true,
-        });
-        fieldsUpdated = true; 
+      dataToSend.cpf = updatedUserData.cpf || '';
+      RootToast.show('CPF alterado com sucesso!', {
+        duration: 1500,
+        position: 50,
+        backgroundColor: '#4CAF50',
+        textColor: '#ffffff',
+        shadow: true,
+      });
+      fieldsUpdated = true;
     }
 
-    // Verificar se o número de telefone foi alterado
+
     if (updatedUserData.number !== user.number) {
-        dataToSend.number = updatedUserData.number;
-        RootToast.show('Telefone alterado com sucesso!', { // Exibir pop-up específico para o telefone
-            duration: 1500,
-            position: 50,
-            backgroundColor: '#4CAF50', // Verde
-            textColor: '#ffffff',
-            shadow: true,
-        });
-        fieldsUpdated = true; 
+      dataToSend.number = updatedUserData.number || '';
+      RootToast.show('Telefone alterado com sucesso!', {
+        duration: 1500,
+        position: 50,
+        backgroundColor: '#4CAF50',
+        textColor: '#ffffff',
+        shadow: true,
+      });
+      fieldsUpdated = true;
     }
 
-    // Se nenhum campo foi alterado, não fazer a requisição
+
     if (!fieldsUpdated) {
-        return;
+      return;
     }
 
     try {
-        const response = await axios.put('http://192.168.18.56:3000/users/update', dataToSend, {
-            headers: {
-                Authorization: `Bearer ${userToken}`,
-            },
-        });
+      const response = await axios.put('http://192.168.18.48:3000/users/update', dataToSend, {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+        },
+      });
 
-        setUser(response.data.user); // Atualizar os dados do usuário no estado
+      setUser(response.data.user);
 
     } catch (error) {
-        console.error('Erro ao salvar dados do usuário:', error);
+      console.error('Erro ao salvar dados do usuário:', error);
     }
-};
+  };
 
 
 
 
   return (
-    <View style={styles.container}>
+    <View style={dynamicStyles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+
         {user && (
           <View style={styles.profileContainer}>
             <Image source={{ uri: user.photoUrl }} style={styles.profileImage} />
-            <Text style={styles.userName}>{user.givenName} {user.familyName}</Text>
+            <Text style={[styles.userName, dynamicStyles.text]}>{user.givenName} {user.familyName}</Text>
             <Text style={styles.email}>{user.email}</Text>
           </View>
         )}
+
+
 
         <DataCard user={user} onSave={onSave} />
 
@@ -163,14 +191,15 @@ const ProfileScreen = () => {
         <View><Text> </Text></View>
         <View><Text> </Text></View>
 
+        <TouchableOpacity style={dynamicStyles.faleButton} onPress={navigateToChatbot}>
+          <View style={styles.buttonContent}>
+            <Icon name="headset-outline" size={24} color="#ffffff" />
+          </View>
+        </TouchableOpacity>
+
       </ScrollView>
 
 
-      <TouchableOpacity style={styles.faleButton} onPress={navigateToChatbot}>
-        <View style={styles.buttonContent}>
-          <Icon name="headset-outline" size={24} color="#ffffff" />
-        </View>
-      </TouchableOpacity>
 
 
       {!isKeyboardVisible && <CilindricalMenu navigation={navigation} />}
@@ -191,7 +220,8 @@ const styles = StyleSheet.create({
   },
   profileContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 30,
+    marginTop: 20
   },
   profileImage: {
     width: 100,
@@ -206,7 +236,7 @@ const styles = StyleSheet.create({
   email: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: 'gray',
+    color: '#808080',
   },
   logoutButton: {
     borderRadius: 25,
@@ -222,7 +252,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: 'red',
+    color: '#d9310b',
   },
   faleButton: {
     position: 'absolute',
